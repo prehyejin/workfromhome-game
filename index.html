@@ -7,17 +7,17 @@
 <!-- 카톡/SNS 링크 미리보기 (Open Graph) -->
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://prehyejin.github.io/workfromhome-game/">
-<meta property="og:title" content="재택 하루에 월급 3%, 당신은 며칠까지?">
+<meta property="og:title" content="출근 안 하는 값, 얼마까지 내실래요?">
 <meta property="og:description" content="30초 밸런스 게임으로 알아보는 나의 재택 가격. 정답 없음, 고민될수록 정상.">
 <meta property="og:image" content="https://prehyejin.github.io/workfromhome-game/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:type" content="image/png">
-<meta property="og:image:alt" content="재택 하루에 월급 3%, 당신은 며칠까지? — 재택 밸런스 게임">
+<meta property="og:image:alt" content="출근 안 하는 값, 얼마까지 내실래요? — 재택 밸런스 게임">
 <meta property="og:site_name" content="재택 밸런스 게임">
 <meta property="og:locale" content="ko_KR">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="재택 하루에 월급 3%, 당신은 며칠까지?">
+<meta name="twitter:title" content="출근 안 하는 값, 얼마까지 내실래요?">
 <meta name="twitter:description" content="30초 밸런스 게임으로 알아보는 나의 재택 가격.">
 <meta name="twitter:image" content="https://prehyejin.github.io/workfromhome-game/og-image.png">
 <style>
@@ -187,6 +187,14 @@ h1{font-size:25px;line-height:1.4;margin:26px 0 10px;color:#17252f}
 <div class="blk">
 <h3>&#128184; 내 선택, 1년으로 환산하면</h3>
 <div class="out" id="cout"></div>
+</div>
+<div class="blk">
+<h3>&#9203; 30년으로 늘려보면</h3>
+<div class="out" id="lout"></div>
+</div>
+<div class="blk" id="jobblk" style="display:none">
+<h3>&#128188; 같은 직군 사람들과 비교하면</h3>
+<div class="out" id="jout"></div>
 </div>
 <div class="blk">
 <h3>&#127482;&#127480; 미국과 비교하면</h3>
@@ -381,6 +389,30 @@ function annual(r){
                  : `<br><span style="font-size:12.5px">시간가치보다 더 내겠다는 선택 — 재택엔 시간 이상의 무언가가 있죠.</span>`;
   }
   document.getElementById('cout').innerHTML = s;
+  lifetime(r);
+}
+function ym(h, perDay){            // 시간 -> "N년 M개월"
+  const days = h/perDay, y = Math.floor(days/365), m = Math.round((days%365)/30.4);
+  if(y<=0) return `${Math.max(m,1)}개월`;
+  return m>0 ? `${y}년 ${m}개월` : `${y}년`;
+}
+function lifetime(r){
+  const YEARS = 30;
+  // 지금처럼 주5일 출근을 30년 유지할 경우의 통근 총량
+  const total = Math.round(C*2*5*4.33*12*YEARS/60);
+  let s = `앞으로 <b>${YEARS}년</b>을 지금처럼 주5일 출근하면<br>`
+        + `통근에만 <b style="color:#E8503A">${total.toLocaleString()}시간</b>을 씁니다.<br>`
+        + `<span style="font-size:12.5px;color:#5b6770">잠자는 시간까지 포함해 꼬박 <b>${ym(total,24)}</b>, `
+        + `깨어있는 시간(하루 16시간)만 세면 <b>${ym(total,16)}</b>.</span>`;
+  if(r.days>0){
+    const back = Math.round(C*2*r.days*4.33*12*YEARS/60);
+    s += `<br><br>당신이 선택한 재택 주${r.days}일이면 이 중 <b style="color:#0FA894">${back.toLocaleString()}시간</b>`
+       + ` — <b>${ym(back,16)}</b>치 깨어있는 삶을 돌려받습니다.`;
+  } else {
+    s += `<br><br><span style="font-size:12.5px;color:#5b6770">재택 주2일만 해도 이 중 `
+       + `<b>${ym(Math.round(C*2*2*4.33*12*YEARS/60),16)}</b>를 돌려받을 수 있어요.</span>`;
+  }
+  document.getElementById('lout').innerHTML = s;
 }
 function usCompare(r){
   const mine = Math.max(r.cut,0);
@@ -406,7 +438,35 @@ function loadStats(r){
           <div class="sbw"><div class="sbf" style="width:${n/max*100}%"></div></div><span>${pct}%</span></div>`;
       }).join('');
     document.getElementById('statblk').style.display='block';
+    jobCompare(r, d);
   }).catch(()=>{});
+}
+const JOB_MIN = 5;   // 이보다 적으면 비교가 오해를 부르므로 숨김
+function jobCompare(r, d){
+  if(J===null || !d.jobs) return;
+  const g = d.jobs[String(J)];
+  if(!g || g.n < JOB_MIN) return;
+
+  const mine = Math.max(r.cut,0);
+  let sum=0, higher=0, same=0;
+  Object.keys(g.cuts).forEach(k=>{
+    const c=+k, n=g.cuts[k];
+    sum += c*n;
+    if(c>mine) higher+=n; else if(c===mine) same+=n;
+  });
+  const avg = sum/g.n;
+  const top = Math.round((higher + same/2)/g.n*100);   // 동점은 절반으로 — 순위 왜곡 방지
+  const label = jobName().split(' (')[0];
+
+  let s = `<b>${label}</b> 응답자 <b>${g.n}명</b> 중에서<br>`
+        + `당신은 재택에 <b style="color:#0FA894">상위 ${Math.max(top,1)}%</b>만큼 후한 편입니다.`
+        + `<br><br>같은 직군 평균 수락 차감률 <b>${avg.toFixed(1)}%</b> ↔ 당신 <b>${mine}%</b>`;
+  s += mine>avg ? `<br><span style="font-size:12.5px;color:#5b6770">평균보다 재택에 더 많이 지불할 의향이 있으시네요.</span>`
+     : (mine<avg ? `<br><span style="font-size:12.5px;color:#5b6770">같은 직군 중에선 신중한 편이시네요.</span>`
+                 : `<br><span style="font-size:12.5px;color:#5b6770">딱 평균이시네요.</span>`);
+  s += `<br><span style="font-size:11.5px;color:#94a1ab">* 표본이 ${g.n}명이라 아직 참고용이에요.</span>`;
+  document.getElementById('jout').innerHTML = s;
+  document.getElementById('jobblk').style.display='block';
 }
 function confetti(){
   const ems=['&#127968;','&#127881;','&#9989;','&#128184;','&#9200;'];

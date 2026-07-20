@@ -18,8 +18,8 @@ GRAY = (120, 133, 143)
 BOLD = "C:/Windows/Fonts/malgunbd.ttf"
 REG = "C:/Windows/Fonts/malgun.ttf"
 
-TITLE1 = "재택 하루에 월급 3%,"
-TITLE2 = "당신은 며칠까지?"
+TITLE1 = "출근 안 하는 값,"
+TITLE2 = "얼마까지 내실래요?"
 SUB = "30초 밸런스 게임으로 알아보는 나의 재택 가격"
 FOOT = "서울대 대학원 연구 프로젝트 · 익명 응답"
 
