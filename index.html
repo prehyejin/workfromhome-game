@@ -147,6 +147,14 @@ h1{font-size:25px;line-height:1.4;margin:26px 0 10px;color:#17252f}
 <div class="vs" id="pair"></div>
 </div>
 
+<div class="screen" id="s3">
+<h1 style="font-size:22px">마지막으로,<br>어떤 일을 하세요?</h1>
+<p class="big">직군에 따라 재택 가능성이 크게 달라서<br>연구에 꼭 필요한 정보예요.</p>
+<div class="grid" id="jgrid" style="grid-template-columns:1fr"></div>
+<button class="btn" id="jnext" disabled onclick="finish()">결과 보기</button>
+<p class="ghost" onclick="J=null;finish()">밝히고 싶지 않아요</p>
+</div>
+
 <div class="screen" id="s2">
 <div class="res-card">
 <div class="res-type">나의 재택 유형</div>
@@ -181,6 +189,48 @@ const ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbwZYHlFp7fGpg27dng
 const t0 = Date.now();
 let W = null, C = null;
 let cur = 0, picks = [], times = [], tStart = 0, TASKS = [], busy=false;
+let J = null;  // 선택한 직군 (KSCO 대분류 코드)
+
+// 라벨은 친숙하게, 저장은 KSCO 대분류 코드로 — kwcs_occ1_scores.csv와 병합 가능
+const JOBS = [
+  [3,"사무직 (경영지원·회계·총무·기획)"],
+  [2,"전문·기술직 (IT·연구·교육·의료·디자인)"],
+  [1,"관리자 (임원·부서장)"],
+  [5,"판매·영업직"],
+  [4,"서비스직 (돌봄·미용·음식·보안)"],
+  [7,"기능직 (건설·정비·제조)"],
+  [8,"장치·기계 조작·조립"],
+  [9,"단순노무"],
+  [6,"농림어업"],
+  [0,"학생 · 무직 · 기타"]
+];
+const jgrid = document.getElementById('jgrid');
+JOBS.forEach(([code,label])=>{
+  const b=document.createElement('button'); b.className='gbtn'; b.textContent=label;
+  b.style.fontSize='13px'; b.style.padding='11px 8px';
+  b.onclick=()=>{ J=code;
+    jgrid.querySelectorAll('.gbtn').forEach(x=>x.classList.remove('sel')); b.classList.add('sel');
+    document.getElementById('jnext').disabled=false; };
+  jgrid.appendChild(b);
+});
+function jobName(){
+  if(J===null) return "";
+  const hit = JOBS.find(x=>x[0]===J);
+  return hit? hit[1] : "";
+}
+
+// 익명 기기 ID — 재응답을 막지 않고 '같은 기기'임을 표시만 함 (분석에서 첫 응답만 사용)
+function deviceId(){
+  try{
+    let d = localStorage.getItem('wfh_did');
+    if(!d){
+      d = (crypto.randomUUID? crypto.randomUUID()
+           : 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,10));
+      localStorage.setItem('wfh_did', d);
+    }
+    return d;
+  }catch(e){ return 'nostore'; }  // 시크릿 모드 등 저장 불가 환경
+}
 
 const sopts = [200,220,240,260,280,300,320,340,360,380,400,420,440,460,480,'500+'];
 const sgrid = document.getElementById('sgrid');
@@ -275,7 +325,7 @@ function pick(side, el){
     cur++;
     if(cur < TASKS.length){ document.getElementById('pair').classList.add('leaving');
       setTimeout(render, 180);
-    } else finish();
+    } else go(3);  // 결과 전에 직무 문항
   }, 330);
 }
 function wtp(){
@@ -356,7 +406,8 @@ function send(r){
   if(!ENDPOINT_URL) return;
   fetch(ENDPOINT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},
     body: JSON.stringify({id:t0+'-'+Math.floor(Math.random()*1e6), commute:C, salary:W, picks, times,
-      days:r.days, type:r.n, ua:navigator.userAgent.slice(0,80), ts:new Date().toISOString()})
+      days:r.days, type:r.n, ua:navigator.userAgent.slice(0,80), ts:new Date().toISOString(),
+      job:J, jobname:jobName(), device:deviceId()})
   }).catch(()=>{});
 }
 // days(-1~5) -> 유형명/차감률. 공유 링크(?r=) 해석용 — wtp()와 동일한 대응.
