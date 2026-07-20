@@ -179,6 +179,11 @@ h1{font-size:25px;line-height:1.4;margin:26px 0 10px;color:#17252f}
 <div class="res-name" id="rname"></div>
 <div class="res-desc" id="rdesc"></div>
 <div class="res-num" id="rnum"></div>
+<div id="rare" style="display:none;margin-top:14px;padding:12px 14px;border-radius:12px;background:#F0FBF8;border:1px solid #BFE6DC;font-size:13.5px;line-height:1.65;color:#0B8574"></div>
+</div>
+<div class="blk" id="hesitblk" style="display:none">
+<h3>&#129300; 가장 망설인 순간</h3>
+<div class="out" id="hout"></div>
 </div>
 <div class="blk" id="statblk" style="display:none">
 <h3>&#128202; 다른 사람들은 어떻게 골랐을까?</h3>
@@ -373,7 +378,7 @@ function finish(){
     + (picks[picks.length-1]==='B'
       ? '<br><span style="font-size:11.5px;color:#b3bcc4">* 마지막 문제는 무작위 클릭을 걸러내는 확인 문제였어요 — 통과!</span>'
       : '<br><span style="font-size:11.5px;color:#94a1ab">* 마지막 문제는 무작위 응답 확인용이었는데... 이유 없는 감봉을 택하셨네요 &#128578; (통계에서는 제외돼요)</span>');
-  go(2); annual(r); usCompare(r); confetti(); send(r); loadStats(r);
+  go(2); annual(r); usCompare(r); hesitation(); confetti(); send(r); loadStats(r);
 }
 function annual(r){
   const d = r.days>0 ? r.days : 2;
@@ -438,9 +443,56 @@ function loadStats(r){
           <div class="sbw"><div class="sbf" style="width:${n/max*100}%"></div></div><span>${pct}%</span></div>`;
       }).join('');
     document.getElementById('statblk').style.display='block';
+    rarity(r, d, order);
     jobCompare(r, d);
   }).catch(()=>{});
 }
+const RARE_MIN = 10;              // 전체 표본이 이보다 적으면 희귀도 표시 안 함
+const TYPE_CUT = {"오피스파":0,"조건부 재택파":0,"수요일 숨구멍파":3,
+                  "실속 하이브리드파":6,"역전파":9,"거의 졸업파":12,"풀재택 순정파":15};
+function rarity(r, d, order){
+  if(!d.total || d.total < RARE_MIN) return;
+  const mineN = d.types[r.n]||0;
+  if(!mineN) return;
+  const share = Math.round(mineN/d.total*100);
+
+  // 나보다 재택에 더 후한 사람 비율 (동점은 절반으로)
+  let higher=0, same=0;
+  order.forEach(k=>{
+    const n = d.types[k]||0, c = TYPE_CUT[k];
+    if(c > r.cut) higher += n; else if(c === r.cut) same += n;
+  });
+  const top = Math.max(Math.round((higher + same/2)/d.total*100), 1);
+
+  const tier = share<=5 ? "&#127894; 극희귀 유형"
+             : share<=12 ? "&#10024; 희귀 유형"
+             : share<=25 ? "&#128101; 소수파"
+             : "&#127968; 다수파";
+  document.getElementById('rare').innerHTML =
+    `<b style="font-size:15px">${tier}</b><br>`
+    + `${d.total}명 중 <b>${share}%</b>만 당신과 같은 <b>${r.n}</b>예요.`
+    + `<br>재택에 후한 순서로는 <b>상위 ${top}%</b>.`;
+  document.getElementById('rare').style.display='block';
+}
+
+const RUNG = ["공짜 주2일 재택","주1일 재택 (3%)","주2일 재택 (6%)",
+              "주3일 재택 (9%)","주4일 재택 (12%)","전면 재택 (15%)"];
+function hesitation(){
+  if(!times || times.length < 6) return;
+  let mi=0, mv=-1;
+  for(let i=0;i<6;i++){ if(times[i] > mv){ mv=times[i]; mi=i; } }
+  if(mv < 2500) return;              // 2.5초 미만이면 '망설였다'고 하기 민망함
+  const sec = (mv/1000).toFixed(1);
+  const decided = picks[mi]==='A' ? '수락' : '거절';
+  let s = `<b>${RUNG[mi]}</b>에서 <b>${sec}초</b> 고민하셨어요.<br>`
+        + `<span style="font-size:13px;color:#5b6770">가장 오래 저울질한 지점이고, 결국 <b>${decided}</b>하셨습니다. `
+        + `여기가 당신의 진짜 경계선이에요.</span>`;
+  const avg = times.slice(0,6).reduce((a,b)=>a+b,0)/6/1000;
+  s += `<br><span style="font-size:11.5px;color:#94a1ab">* 문항당 평균 ${avg.toFixed(1)}초</span>`;
+  document.getElementById('hout').innerHTML = s;
+  document.getElementById('hesitblk').style.display='block';
+}
+
 const JOB_MIN = 5;   // 이보다 적으면 비교가 오해를 부르므로 숨김
 function jobCompare(r, d){
   if(J===null || !d.jobs) return;
