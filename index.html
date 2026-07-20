@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>재택 밸런스 게임 — 재택 하루에 월급 3%, 며칠까지?</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+ background:linear-gradient(180deg,#FFF9EE 0%,#F0F9F6 55%,#E7F4F0 100%);
+ color:#22303c;display:flex;justify-content:center;min-height:100vh}
+.app{max-width:440px;width:100%;padding:24px 14px 48px}
+.screen{display:none}.screen.on{display:block;animation:in .3s ease}
+@keyframes in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+h1{font-size:25px;line-height:1.4;margin:26px 0 10px;color:#17252f}
+.big{font-size:15px;color:#5b6a76;line-height:1.7}
+.btn{display:block;width:100%;background:#0FA894;color:#fff;font-weight:800;font-size:17px;border:none;border-radius:14px;padding:16px;margin-top:26px;cursor:pointer;box-shadow:0 4px 14px rgba(15,168,148,.25);transition:.15s}
+.btn:hover{transform:translateY(-1px)}
+.btn:disabled{background:#cfd8d6;box-shadow:none;color:#94a3a0}
+.btn:active{transform:scale(.98)}
+.ghost{background:transparent;color:#8a97a1;font-size:13px;border:none;margin-top:14px;cursor:pointer;width:100%;text-align:center;text-decoration:underline}
+.noline{text-decoration:none;cursor:default}
+.backb{background:transparent;border:none;color:#94a1ab;font-size:13px;cursor:pointer;padding:6px 0;margin-bottom:4px;text-align:left}
+.backb:hover{color:#5b6a76}
+.prog{height:7px;background:#E3EAE7;border-radius:4px;margin:8px 0 18px;overflow:hidden}
+.prog i{display:block;height:100%;background:linear-gradient(90deg,#0FA894,#5EC9B8);border-radius:4px;transition:width .35s cubic-bezier(.4,1.4,.6,1)}
+.qnum{font-size:12px;color:#94a1ab;letter-spacing:.1em;margin-bottom:6px}
+.qt{font-size:19px;font-weight:800;margin-bottom:6px;line-height:1.45;color:#17252f}
+.qsub{font-size:13px;color:#7b8892;margin-bottom:16px;line-height:1.6}
+.vs{display:grid;grid-template-columns:1fr 1fr;gap:10px;position:relative}
+.vs.leaving .opt{animation:out .22s ease forwards}
+@keyframes out{to{opacity:0;transform:translateY(-8px)}}
+.vsbadge{position:absolute;left:50%;top:46px;transform:translateX(-50%);background:#fff;border:2px solid #E3DED2;color:#8a97a1;font-weight:900;font-size:12px;border-radius:999px;padding:4px 9px;z-index:2;animation:pulse 1.6s ease infinite}
+@keyframes pulse{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.12)}}
+.opt{background:#fff;border:2px solid #E7E2D6;border-radius:18px;padding:14px 10px 12px;cursor:pointer;transition:.15s;text-align:center;box-shadow:0 2px 8px rgba(40,60,60,.05);animation:cardIn .3s ease backwards}
+.opt:nth-child(2){animation-delay:.05s}.opt:nth-child(3){animation-delay:.12s}
+@keyframes cardIn{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
+.opt:hover{transform:translateY(-3px);border-color:#0FA894;box-shadow:0 8px 20px rgba(15,168,148,.15)}
+.opt.picked{animation:pop .28s ease;border-color:#0FA894;background:#F0FBF8;box-shadow:0 0 0 4px rgba(15,168,148,.18)}
+.opt.unpicked{opacity:.35;transform:scale(.96)}
+@keyframes pop{0%{transform:scale(1)}45%{transform:scale(1.06)}100%{transform:scale(1)}}
+.opt .ico{font-size:34px;line-height:1;margin-bottom:6px}
+.opt .h{font-size:15px;font-weight:800;margin-bottom:10px;line-height:1.3}
+.orA .h{color:#0B8574}.orB .h{color:#5b6a76}
+.week{display:flex;gap:3px;justify-content:center;margin-bottom:12px}
+.day{width:30px;height:34px;border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;color:#94a1ab;background:#F2EFE7;border:1px solid #E7E2D6;animation:dayIn .3s ease backwards}
+.day:nth-child(1){animation-delay:.05s}.day:nth-child(2){animation-delay:.1s}.day:nth-child(3){animation-delay:.15s}.day:nth-child(4){animation-delay:.2s}.day:nth-child(5){animation-delay:.25s}
+@keyframes dayIn{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+.day b{font-size:12px;margin-top:1px}
+.day.home{background:#D9F4EC;border-color:#0FA894;color:#0B8574}
+.row{font-size:12.5px;color:#66737e;padding:7px 4px;border-top:1px solid #F0EDE4;line-height:1.5}
+.row b{color:#22303c;font-size:13.5px}
+.row .cut{color:#E8503A}
+.row .keep{color:#0B8574}
+.row.dim{opacity:.5}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:20px}
+.gbtn{background:#fff;border:2px solid #E7E2D6;color:#22303c;border-radius:12px;padding:13px 0;font-size:14px;font-weight:700;cursor:pointer;transition:.12s}
+.gbtn:hover{border-color:#0FA894}
+.gbtn.sel{border-color:#0FA894;background:#E5F7F2;color:#0B8574}
+.res-card{background:#fff;border:1px solid #E7E2D6;border-radius:20px;padding:26px 20px;margin-top:18px;box-shadow:0 6px 24px rgba(40,60,60,.08);animation:resIn .45s cubic-bezier(.3,1.4,.5,1) backwards}
+@keyframes resIn{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+.res-type{font-size:13px;color:#0FA894;letter-spacing:.14em;font-weight:700}
+.res-name{font-size:28px;font-weight:900;margin:8px 0 4px;color:#17252f}
+.res-desc{font-size:14px;color:#5b6a76;line-height:1.7}
+.res-num{font-size:15px;margin-top:16px;padding-top:16px;border-top:1px dashed #E3DED2;line-height:1.8}
+.res-num b{color:#0B8574;font-size:19px}
+.blk{margin-top:16px;background:#fff;border:1px solid #E7E2D6;border-radius:16px;padding:18px 16px;animation:resIn .45s ease backwards}
+.blk:nth-of-type(3){animation-delay:.1s}.blk:nth-of-type(4){animation-delay:.2s}.blk:nth-of-type(5){animation-delay:.3s}
+.blk h3{font-size:15px;margin-bottom:10px;color:#17252f}
+.blk .out{font-size:14px;line-height:1.8;color:#5b6a76}
+.blk .out b{color:#0B8574;font-size:16.5px}
+.cmp{margin-top:10px}
+.cmp .lab{font-size:12px;color:#7b8892;margin-bottom:3px}
+.cmp .barw{background:#F0EDE4;border-radius:6px;height:22px;position:relative;margin-bottom:8px;overflow:hidden}
+.cmp .barf{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:8px;font-size:11.5px;font-weight:800;color:#fff;min-width:36px;animation:grow .8s cubic-bezier(.3,1.2,.5,1) backwards}
+@keyframes grow{from{width:0!important}}
+.stat{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:13px;color:#5b6a76}
+.stat .sbw{flex:1;background:#F0EDE4;border-radius:5px;height:16px;overflow:hidden}
+.stat .sbf{height:100%;background:#BFE6DC;border-radius:5px;animation:grow .7s ease backwards}
+.stat.me .sbf{background:#0FA894}
+.stat.me{font-weight:800;color:#0B8574}
+.fact{margin-top:18px;font-size:12.5px;color:#8a97a1;line-height:1.7;border-left:3px solid #E3DED2;padding-left:12px}
+.fact b{color:#5b6a76}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#22303c;color:#fff;font-weight:700;padding:10px 18px;border-radius:20px;font-size:13px;opacity:0;transition:.3s;pointer-events:none;z-index:99}
+.toast.show{opacity:1}
+.confetti{position:fixed;top:-30px;font-size:22px;animation:fall linear forwards;pointer-events:none;z-index:50}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg);opacity:.7}}
+@media(min-width:768px){
+  .app{max-width:720px;padding:48px 24px 72px}
+  h1{font-size:36px}
+  .big{font-size:17px}
+  .btn{font-size:19px;padding:18px;max-width:420px;margin-left:auto;margin-right:auto}
+  .qt{font-size:26px}.qsub{font-size:15px}
+  .vs{gap:18px}
+  .vsbadge{top:64px;font-size:14px;padding:6px 12px}
+  .opt{padding:22px 18px 18px;border-radius:22px}
+  .opt .ico{font-size:46px}
+  .opt .h{font-size:19px;margin-bottom:14px}
+  .day{width:44px;height:50px;font-size:11px;border-radius:9px}
+  .day b{font-size:16px}
+  .week{gap:5px;margin-bottom:16px}
+  .row{font-size:15px;padding:9px 6px}
+  .row b{font-size:16px}
+  .gbtn{font-size:16px;padding:16px 0}
+  .res-name{font-size:34px}
+  .res-desc,.blk .out{font-size:15.5px}
+}
+</style>
+</head>
+<body><div class="app">
+
+<div class="screen on" id="s0">
+<div style="font-size:44px;margin-top:30px">&#127968;&#9878;&#65039;&#127970;</div>
+<h1>재택 하루에 월급 3%,<br>당신은 며칠까지?</h1>
+<p class="big">30초 밸런스 게임으로 알아보는 나의 재택 가격.<br>정답 없음, 고민될수록 정상.</p>
+<button class="btn" onclick="go(8)">시작하기</button>
+<p class="ghost noline">서울대 대학원 연구 프로젝트의 공개 실험입니다 · 익명 · 응답은 통계로만 사용</p>
+</div>
+
+<div class="screen" id="s8">
+<button class="backb" onclick="go(0)">&#8592; 이전</button>
+<h1 style="font-size:22px">지금 세전 월급이<br>대략 얼마예요?</h1>
+<p class="big">선택지의 차감액을 원화로 보여드리려는 것뿐이에요.<br>가까운 걸 골라주세요. 만원/월 기준.</p>
+<div class="grid" id="sgrid"></div>
+<button class="btn" id="snext" disabled onclick="go(9)">다음</button>
+<button class="ghost" onclick="W=null;go(9)">밝히고 싶지 않아요 (%로만 볼게요)</button>
+</div>
+
+<div class="screen" id="s9">
+<button class="backb" onclick="go(8)">&#8592; 이전</button>
+<h1 style="font-size:22px">지금 회사까지<br>편도 통근이 얼마나 걸려요?</h1>
+<p class="big">문에서 문까지, 대략이면 돼요.</p>
+<div class="grid" id="cgrid"></div>
+<button class="btn" id="cnext" disabled onclick="go(1)">다음</button>
+</div>
+
+<div class="screen" id="s1">
+<button class="backb" onclick="backQ()">&#8592; 이전</button>
+<div class="prog"><i id="bar" style="width:0%"></i></div>
+<div class="qnum" id="qnum"></div>
+<div class="qt" id="qt"></div>
+<div class="qsub" id="qsub"></div>
+<div class="vs" id="pair"></div>
+</div>
+
+<div class="screen" id="s2">
+<div class="res-card">
+<div class="res-type">나의 재택 유형</div>
+<div class="res-name" id="rname"></div>
+<div class="res-desc" id="rdesc"></div>
+<div class="res-num" id="rnum"></div>
+</div>
+<div class="blk" id="statblk" style="display:none">
+<h3>&#128202; 다른 사람들은 어떻게 골랐을까?</h3>
+<div id="stats"></div>
+</div>
+<div class="blk">
+<h3>&#128184; 내 선택, 1년으로 환산하면</h3>
+<div class="out" id="cout"></div>
+</div>
+<div class="blk">
+<h3>&#127482;&#127480; 미국과 비교하면</h3>
+<div class="out" style="font-size:13px;margin-bottom:8px">미국 실험연구의 평균 재택 지불용의: 월급의 8% (Mas &amp; Pallais 2017)</div>
+<div class="cmp" id="cmp"></div>
+</div>
+<div class="fact">
+한국 임금근로자 2,207만 명 중 <b>약 643만 명</b>은 일의 성격상 재택이 가능한데 거의 전원 출근 중입니다(실현율 5%). 이들이 미국 평균 수준으로만 재택해도 돌아오는 통근시간 가치는 <b>연간 약 5.8조 원</b> — 근로환경조사(2023)·통계청 통근통계(2024) 기반 연구 추정.
+</div>
+<button class="btn" onclick="share()">결과 공유하기 &#128279;</button>
+<p class="ghost" onclick="location.reload()">다시 해보기</p>
+</div>
+
+<div class="toast" id="toast">복사됐어요! 붙여넣어 공유하세요</div>
+
+<script>
+const ENDPOINT_URL = "https://script.google.com/macros/s/AKfycbwZYHlFp7fGpg27dngYzuq2ndVN6dA5Pkwr_LTsrc4sbU-0lnUjUZKRwH9P4ko_thvbfA/exec";
+const t0 = Date.now();
+let W = null, C = null;
+let cur = 0, picks = [], times = [], tStart = 0, TASKS = [], busy=false;
+
+const sopts = [200,220,240,260,280,300,320,340,360,380,400,420,440,460,480,'500+'];
+const sgrid = document.getElementById('sgrid');
+sopts.forEach(v=>{
+  const b=document.createElement('button'); b.className='gbtn'; b.textContent=(v==='500+'?'500+':v);
+  b.onclick=()=>{ W=(v==='500+'?550:v);
+    sgrid.querySelectorAll('.gbtn').forEach(x=>x.classList.remove('sel')); b.classList.add('sel');
+    document.getElementById('snext').disabled=false; };
+  sgrid.appendChild(b);
+});
+const copts = [10,20,30,40,50,60,70,80,90,'100+'];
+const cgrid = document.getElementById('cgrid');
+copts.forEach(v=>{
+  const b=document.createElement('button'); b.className='gbtn'; b.textContent=(v==='100+'?'100분+':v+'분');
+  b.onclick=()=>{ C=(v==='100+'?105:v);
+    cgrid.querySelectorAll('.gbtn').forEach(x=>x.classList.remove('sel')); b.classList.add('sel');
+    document.getElementById('cnext').disabled=false; };
+  cgrid.appendChild(b);
+});
+
+function cd(c){ return c>=105? '100분+' : c+'분'; }
+function wage(p){
+  if(!p) return "월급 <b class='keep'>그대로</b>";
+  if(W) return `월급 <b class='cut'>&minus;${Math.round(W*p/100)}만원</b><br><span style='font-size:11px;color:#94a1ab'>(${W>=550?'500만+':W+'만'}원의 ${p}%)</span>`;
+  return `월급 <b class='cut'>&minus;${p}%</b>`;
+}
+function week(n){
+  const days=['월','화','수','목','금'];
+  const pat = {0:[],1:[2],2:[1,3],3:[0,2,4],4:[0,1,3,4],5:[0,1,2,3,4]}[n];
+  return '<div class="week">'+days.map((d,i)=>
+    `<div class="day ${pat.includes(i)?'home':''}">${d}<b>${pat.includes(i)?'&#127968;':'&#127970;'}</b></div>`).join('')+'</div>';
+}
+function cardHTML(o, side){
+  return `<div class="opt ${side==='A'?'orA':'orB'}" onclick="pick('${side}',this)">
+    <div class="ico">${o.ico}</div><div class="h">${o.h}</div>
+    ${week(o.days)}
+    <div class="row">&#128176; ${o.wage}</div>
+    <div class="row">&#128647; ${o.commute}</div>
+    <div class="row ${o.save?'':'dim'}">&#9200; ${o.save || "아끼는 통근 <b>없음</b>"}</div>
+  </div>`;
+}
+function buildTasks(c){
+  const comNow = `출근일 편도 <b>${cd(c)}</b>`;
+  const mh = (min,days)=> Math.round(min*2*days*4.33/60);
+  const sv = n => `통근 월 <b class='keep'>&minus;${mh(c,n)}시간</b>`;
+  const stay = {ico:"&#127970;",h:"신청 안 함<br>주5일 출근",days:0,wage:wage(0),commute:comNow};
+  return [
+  {t:"회사가 주2일 재택제를 도입한대요", s:"조건 변화 없음 — 월급 그대로, 원하는 사람만 신청. 신청할래요?",
+    A:{ico:"&#127968;",h:"신청한다<br>주2일 재택",days:2,wage:wage(0),commute:comNow,save:sv(2)}, B:stay},
+  {t:"조건이 붙었어요: 재택 하루당 3% 차감", s:"우선 주1일부터 — 수요일 하루 재택에 3%.",
+    A:{ico:"&#127968;",h:"신청<br>주1일 재택",days:1,wage:wage(3),commute:comNow,save:sv(1)}, B:stay},
+  {t:"주2일이라면요?", s:"하루당 3% — 주2일이면 6% 차감.",
+    A:{ico:"&#127968;",h:"신청<br>주2일 재택",days:2,wage:wage(6),commute:comNow,save:sv(2)}, B:stay},
+  {t:"주3일로 늘릴 수도 있대요", s:"9% 차감 — 재택이 출근을 이기는 주.",
+    A:{ico:"&#127968;",h:"신청<br>주3일 재택",days:3,wage:wage(9),commute:comNow,save:sv(3)}, B:stay},
+  {t:"주4일은요?", s:"출근은 딱 하루 — 대신 12% 차감.",
+    A:{ico:"&#127968;",h:"신청<br>주4일 재택",days:4,wage:wage(12),commute:comNow,save:sv(4)}, B:stay},
+  {t:"끝판왕: 전면 재택", s:"출근이 사라집니다 — 15% 차감.",
+    A:{ico:"&#128225;",h:"신청<br>전면 재택",days:5,wage:wage(15),commute:"출근 <b>없음</b>",save:sv(5)}, B:stay},
+  {t:"마지막 문제!", s:"이건 고민할 필요 없을... 걸요?",
+    A:{ico:"&#129335;",h:"조건 없이<br>월급 깎기",days:0,wage:"아무 이유 없이 "+wage(3),commute:comNow},
+    B:{ico:"&#128077;",h:"월급 그대로<br>받기",days:0,wage:"지금과 <b class='keep'>완전 동일</b>",commute:comNow}}];
+}
+
+function render(){
+  const t = TASKS[cur];
+  document.getElementById('qnum').textContent = `Q${cur+1} / ${TASKS.length}`;
+  document.getElementById('bar').style.width = (cur/TASKS.length*100)+'%';
+  document.getElementById('qt').innerHTML = t.t;
+  document.getElementById('qsub').textContent = t.s;
+  const pair = document.getElementById('pair');
+  pair.classList.remove('leaving');
+  pair.innerHTML = '<div class="vsbadge">VS</div>' + cardHTML(t.A,'A') + cardHTML(t.B,'B');
+  tStart = Date.now(); busy=false;
+}
+function go(n){
+  if(n===1){ TASKS = buildTasks(C); cur=0; picks=[]; times=[]; }
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.getElementById('s'+n).classList.add('on'); if(n===1) render();
+}
+function backQ(){
+  if(busy) return;
+  if(cur===0){ go(9); return; }
+  cur--; picks.pop(); times.pop(); render();
+}
+function pick(side, el){
+  if(busy) return; busy=true;
+  picks.push(side); times.push(Date.now()-tStart);
+  el.classList.add('picked');
+  document.querySelectorAll('.opt').forEach(o=>{ if(o!==el) o.classList.add('unpicked'); });
+  setTimeout(()=>{
+    cur++;
+    if(cur < TASKS.length){ document.getElementById('pair').classList.add('leaving');
+      setTimeout(render, 180);
+    } else finish();
+  }, 330);
+}
+function wtp(){
+  const dayWon = W? ` (하루당 약 ${Math.round(W*0.03)}만원)` : '';
+  if(picks[5]==='A') return {days:5, cut:15, n:"풀재택 순정파", d:"월급 15%를 내고 출근을 완전히 졸업합니다. 하루당 3%"+dayWon+"를 다섯 번 흔쾌히."};
+  if(picks[4]==='A') return {days:4, cut:12, n:"거의 졸업파", d:"출근은 주1일만 남기고 12%를 냅니다. 사무실은 가끔 들르는 곳."};
+  if(picks[3]==='A') return {days:3, cut:9, n:"역전파", d:"재택 3 : 출근 2 — 재택이 이기는 한 주를 9%에 삽니다."};
+  if(picks[2]==='A') return {days:2, cut:6, n:"실속 하이브리드파", d:"주2일까지는 하루당 3%"+dayWon+"를 낼 가치가 있다고 봅니다. 가장 흔한 유형."};
+  if(picks[1]==='A') return {days:1, cut:3, n:"수요일 숨구멍파", d:"주중 하루의 숨구멍에 3%"+dayWon+"를 냅니다. 소소하지만 확실한 재택."};
+  if(picks[0]==='A') return {days:0, cut:0, n:"조건부 재택파", d:"공짜면 재택, 유료면 출근. 재택이 좋긴 한데 월급 앞에선 신중해집니다."};
+  return {days:-1, cut:0, n:"오피스파", d:"공짜여도 사무실. 회사가 더 잘 맞는 사람도 분명히 있고, 그것도 데이터입니다."};
+}
+function finish(){
+  const r = wtp();
+  const cutTxt = r.cut>0 ? `월급의 <b>&minus;${r.cut}%</b>${W? ` (월 &minus;${Math.round(W*r.cut/100)}만원)`:''} 까지 수락` : (r.days===0? '무료까지만 수락' : '재택 자체를 사양');
+  document.getElementById('rname').innerHTML = r.n;
+  document.getElementById('rdesc').innerHTML = r.d;
+  document.getElementById('rnum').innerHTML = `재택 ${r.days>0? '주'+r.days+'일':'0일'} · ${cutTxt}`
+    + (picks[picks.length-1]==='B'
+      ? '<br><span style="font-size:11.5px;color:#b3bcc4">* 마지막 문제는 무작위 클릭을 걸러내는 확인 문제였어요 — 통과!</span>'
+      : '<br><span style="font-size:11.5px;color:#94a1ab">* 마지막 문제는 무작위 응답 확인용이었는데... 이유 없는 감봉을 택하셨네요 &#128578; (통계에서는 제외돼요)</span>');
+  go(2); annual(r); usCompare(r); confetti(); send(r); loadStats(r);
+}
+function annual(r){
+  const d = r.days>0 ? r.days : 2;
+  const hyp = r.days>0 ? '' : '(만약 주2일 재택이라면) ';
+  const hours = Math.round(C*2*d*4.33*12/60);
+  const tv = Math.round(hours*11439/10000);
+  const movies = Math.round(hours/2);
+  let s = `${hyp}편도 ${cd(C)} × 재택 주${d}일 —<br>1년에 <b>${hours}시간</b>의 통근이 사라져요.<br>영화 <b>${movies}편</b>, 연차 <b>${Math.round(hours/8)}일</b> 분량. 시간가치로 <b>약 ${tv}만 원</b>.`;
+  if(W && r.cut>0){
+    const pay = Math.round(W*12*r.cut/100);
+    s += `<br><br>당신이 수락한 차감: 연 <b style="color:#E8503A">${pay}만 원</b> ↔ 되찾는 시간가치: 연 <b>${tv}만 원</b>`;
+    s += pay<=tv ? `<br><span style="font-size:12.5px">시간 기준으로도 남는 거래를 하셨네요.</span>`
+                 : `<br><span style="font-size:12.5px">시간가치보다 더 내겠다는 선택 — 재택엔 시간 이상의 무언가가 있죠.</span>`;
+  }
+  document.getElementById('cout').innerHTML = s;
+}
+function usCompare(r){
+  const mine = Math.max(r.cut,0);
+  const us = 8;
+  const maxv = Math.max(mine,us,1);
+  document.getElementById('cmp').innerHTML =
+   `<div class="lab">나 (${mine}%)</div>
+    <div class="barw"><div class="barf" style="width:${mine/maxv*100}%;background:#0FA894">${mine}%</div></div>
+    <div class="lab">미국 평균 (8%)</div>
+    <div class="barw"><div class="barf" style="width:${us/maxv*100}%;background:#8AB6D6;animation-delay:.15s">8%</div></div>`;
+}
+function loadStats(r){
+  if(!ENDPOINT_URL) return;
+  fetch(ENDPOINT_URL+'?stats=1').then(x=>x.json()).then(d=>{
+    if(!d || !d.total) return;
+    const order = ["오피스파","조건부 재택파","수요일 숨구멍파","실속 하이브리드파","역전파","거의 졸업파","풀재택 순정파"];
+    const max = Math.max(...order.map(k=>d.types[k]||0),1);
+    document.getElementById('stats').innerHTML =
+      `<div style="font-size:12.5px;color:#94a1ab;margin-bottom:8px">지금까지 ${d.total}명 참여</div>` +
+      order.map(k=>{
+        const n = d.types[k]||0, pct = Math.round(n/d.total*100);
+        return `<div class="stat ${k===r.n?'me':''}"><span style="width:96px">${k}</span>
+          <div class="sbw"><div class="sbf" style="width:${n/max*100}%"></div></div><span>${pct}%</span></div>`;
+      }).join('');
+    document.getElementById('statblk').style.display='block';
+  }).catch(()=>{});
+}
+function confetti(){
+  const ems=['&#127968;','&#127881;','&#9989;','&#128184;','&#9200;'];
+  for(let i=0;i<18;i++){
+    const s=document.createElement('div'); s.className='confetti';
+    s.innerHTML=ems[i%ems.length];
+    s.style.left=Math.random()*100+'vw';
+    s.style.animationDuration=(2.2+Math.random()*1.6)+'s';
+    s.style.animationDelay=(Math.random()*.5)+'s';
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),4500);
+  }
+}
+function send(r){
+  if(!ENDPOINT_URL) return;
+  fetch(ENDPOINT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},
+    body: JSON.stringify({id:t0+'-'+Math.floor(Math.random()*1e6), commute:C, salary:W, picks, times,
+      days:r.days, type:r.n, ua:navigator.userAgent.slice(0,80), ts:new Date().toISOString()})
+  }).catch(()=>{});
+}
+function share(){
+  const r = wtp();
+  const txt = `나의 재택 유형: ${r.n} (재택 ${r.days>0?'주'+r.days+'일':'0일'}, 월급 -${r.cut}%까지 수락)\n너는 며칠까지 살래? 30초 테스트 → ${location.href}`;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const t=document.getElementById('toast'); t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2000);
+  });
+}
+</script>
+</div></body>
+</html>
