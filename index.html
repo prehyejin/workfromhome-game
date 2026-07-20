@@ -117,12 +117,12 @@ h1{font-size:25px;line-height:1.4;margin:26px 0 10px;color:#17252f}
 <div style="font-size:44px;margin-top:30px">&#127968;&#9878;&#65039;&#127970;</div>
 <h1>재택 하루에 월급 3%,<br>당신은 며칠까지?</h1>
 <p class="big">30초 밸런스 게임으로 알아보는 나의 재택 가격.<br>정답 없음, 고민될수록 정상.</p>
-<button class="btn" onclick="go(8)">시작하기</button>
+<button class="btn" onclick="go(3)">시작하기</button>
 <p class="ghost noline">서울대 대학원 연구 프로젝트의 공개 실험입니다 · 익명 · 응답은 통계로만 사용</p>
 </div>
 
 <div class="screen" id="s8">
-<button class="backb" onclick="go(0)">&#8592; 이전</button>
+<button class="backb" onclick="go(3)">&#8592; 이전</button>
 <h1 style="font-size:22px">지금 세전 월급이<br>대략 얼마예요?</h1>
 <p class="big">선택지의 차감액을 원화로 보여드리려는 것뿐이에요.<br>가까운 걸 골라주세요. 만원/월 기준.</p>
 <div class="grid" id="sgrid"></div>
@@ -148,11 +148,12 @@ h1{font-size:25px;line-height:1.4;margin:26px 0 10px;color:#17252f}
 </div>
 
 <div class="screen" id="s3">
-<h1 style="font-size:22px">마지막으로,<br>어떤 일을 하세요?</h1>
+<button class="backb" onclick="go(0)">&#8592; 이전</button>
+<h1 style="font-size:22px">먼저,<br>어떤 일을 하세요?</h1>
 <p class="big">직군에 따라 재택 가능성이 크게 달라서<br>연구에 꼭 필요한 정보예요.</p>
 <div class="grid" id="jgrid" style="grid-template-columns:1fr"></div>
-<button class="btn" id="jnext" disabled onclick="finish()">결과 보기</button>
-<p class="ghost" onclick="J=null;finish()">밝히고 싶지 않아요</p>
+<button class="btn" id="jnext" disabled onclick="go(8)">다음</button>
+<p class="ghost" onclick="J=null;go(8)">밝히고 싶지 않아요</p>
 </div>
 
 <div class="screen" id="s2">
@@ -325,7 +326,7 @@ function pick(side, el){
     cur++;
     if(cur < TASKS.length){ document.getElementById('pair').classList.add('leaving');
       setTimeout(render, 180);
-    } else go(3);  // 결과 전에 직무 문항
+    } else finish();
   }, 330);
 }
 function wtp(){
